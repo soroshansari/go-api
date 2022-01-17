@@ -17,7 +17,8 @@ import (
 type AuthController interface {
 	Login(ctx *gin.Context)
 	Register(ctx *gin.Context)
-	// Logout(ctx *gin.Context)
+	RefreshToken(ctx *gin.Context)
+	Logout(ctx *gin.Context)
 }
 
 type authController struct {
@@ -69,10 +70,18 @@ func (controller *authController) Login(ctx *gin.Context) {
 		return
 	}
 
-	token := controller.jWtService.GenerateToken(user.User_id, true, time.Hour*24*30)
+	token := controller.jWtService.GenerateToken(user.ID.Hex(), true, time.Minute*15)
+
+	refreshToken, err := controller.userService.CreateRefreshToken(user.ID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
 	ctx.JSON(http.StatusOK, gin.H{
-		"accessToken": token,
-		"user":        model.GetUser(user),
+		"accessToken":  token,
+		"refreshToken": refreshToken,
+		"user":         model.GetUser(user),
 	})
 }
 
@@ -108,9 +117,61 @@ func (controller *authController) Register(ctx *gin.Context) {
 		return
 	}
 
-	token := controller.jWtService.GenerateToken(user.User_id, true, time.Hour*24*30)
+	ctx.JSON(http.StatusOK, gin.H{
+		"user": model.GetUser(user),
+	})
+}
+
+// POST /api/auth/refresh-token
+// Register a user
+func (controller *authController) RefreshToken(ctx *gin.Context) {
+	var dto dto.RefreshToken
+
+	if err := ctx.ShouldBind(&dto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if validationErr := controller.validate.Struct(dto); validationErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		return
+	}
+
+	userId, err := controller.userService.FindUserIdbyRefreshToken(*dto.Token)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err})
+		return
+	}
+
+	token := controller.jWtService.GenerateToken(userId.Hex(), true, time.Minute*15)
+
 	ctx.JSON(http.StatusOK, gin.H{
 		"accessToken": token,
-		"user":        model.GetUser(user),
+	})
+}
+
+// POST /api/auth/logout
+// Log the user out by removing the refresh token
+func (controller *authController) Logout(ctx *gin.Context) {
+	var dto dto.Logout
+
+	if err := ctx.ShouldBind(&dto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if validationErr := controller.validate.Struct(dto); validationErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		return
+	}
+
+	err := controller.userService.RemoveRefreshToken(*dto.Token)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "Success",
 	})
 }

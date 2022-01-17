@@ -14,5 +14,4 @@ type User struct {
 	LastName  *string            `json:"lastName" validate:"required,min=2,max=100"`
 	CreatedAt time.Time          `json:"createdAt"`
 	UpdatedAt time.Time          `json:"updatedAt"`
-	User_id   string             `json:"user_id"`
 }

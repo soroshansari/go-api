@@ -7,7 +7,7 @@ import (
 )
 
 type User struct {
-	User_id     string    `json:"id"`
+	Id          string    `json:"id"`
 	Email       *string   `json:"email"`
 	DisplayName string    `json:"displayName"`
 	FirstName   *string   `json:"firstName"`
@@ -18,7 +18,7 @@ type User struct {
 
 func GetUser(user *database.User) *User {
 	return &User{
-		User_id:     user.User_id,
+		Id:          user.ID.Hex(),
 		Email:       user.Email,
 		DisplayName: fmt.Sprintf("%s %s", *user.FirstName, *user.LastName),
 		FirstName:   user.FirstName,

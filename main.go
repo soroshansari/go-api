@@ -62,6 +62,7 @@ func main() {
 	{
 		auth.POST("login", authController.Login)
 		auth.POST("register", authController.Register)
+		auth.POST("refresh-token", authController.RefreshToken)
 		// auth.PUT("logout", authController.Logout)
 	}
 	user := app.Group("/api/user")
