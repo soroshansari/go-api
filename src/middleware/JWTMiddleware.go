@@ -23,7 +23,6 @@ func AuthorizeJWT(configs *provider.Configs) gin.HandlerFunc {
 			return
 		}
 		tokenString := authHeader[len(BEARER_SCHEMA):]
-		// }
 		token, err := provider.JWTAuthService(configs).ValidateToken(tokenString)
 		if !token.Valid {
 			fmt.Println(err)

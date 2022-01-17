@@ -19,8 +19,9 @@ func main() {
 
 	var dbClient = database.GetClient(configs)
 	var userService service.UserService = service.StaticUserService(dbClient, &configs)
+	var emailService provider.EmailService = provider.StaticEmailService(&configs)
 	var jwtService provider.JWTService = provider.JWTAuthService(&configs)
-	var authController controller.AuthController = controller.AuthHandler(&jwtService, &userService, &configs)
+	var authController controller.AuthController = controller.AuthHandler(&jwtService, &userService, &emailService, &configs)
 	var userController controller.UserController = controller.UserHandler(&userService, &configs)
 
 	app := gin.New()
@@ -62,8 +63,9 @@ func main() {
 	{
 		auth.POST("login", authController.Login)
 		auth.POST("register", authController.Register)
-		auth.POST("refresh-token", authController.RefreshToken)
-		// auth.PUT("logout", authController.Logout)
+		auth.POST("verify", authController.VerifyEmail)
+		auth.PUT("refresh/:tokenId", authController.RefreshToken)
+		auth.PUT("logout/:tokenId", authController.Logout)
 	}
 	user := app.Group("/api/user")
 	user.Use(middleware.AuthorizeJWT(&configs))

@@ -37,12 +37,12 @@ func UserHandler(
 // get authenticated user info
 func (controller *userController) Me(ctx *gin.Context) {
 	userId := ctx.MustGet("userId").(string)
-	fmt.Print("userId:")
+	fmt.Print("userId: ")
 	fmt.Println(userId)
 
 	user, err := controller.userService.FindById(userId)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 	if user == nil {
@@ -50,5 +50,5 @@ func (controller *userController) Me(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"user": model.GetUser(user)})
+	ctx.JSON(http.StatusOK, model.GetUser(user))
 }

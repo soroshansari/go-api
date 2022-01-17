@@ -44,7 +44,7 @@ services:
   rentbudi-api:
     image: cosmtrek/air
     # working_dir value has to be the same of mapped volume
-    working_dir: /project-package
+    working_dir: /app
     ports:
       - 3003:80
     environment:
@@ -53,8 +53,13 @@ services:
       - JWT_SECRET=${JWT_SECRET:?err}
       - MONGODB_URL=mongodb://root:pass12345@mongodb:27017/?authSource=admin
       - DATABASE_NAME=${DATABASE_NAME:?err}
+      - SMTP_SENDER=${SMTP_SENDER:?err}
+      - SMTP_HOST=${SMTP_HOST:?err}
+      - SMTP_PORT=${SMTP_PORT:?err}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:?err}
+      - FE_VERIFY_URL=${FE_VERIFY_URL:?err}
     volumes:
-      - .:/project-package/
+      - .:/app/
     depends_on:
       - mongodb
     networks:

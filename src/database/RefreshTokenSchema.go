@@ -7,8 +7,8 @@ import (
 )
 
 type RefreshToken struct {
-	ID        primitive.ObjectID `bson:"_id"`
-	UserId    primitive.ObjectID `bson:"user_id"`
-	CreatedAt time.Time          `json:"createdAt"`
-	UpdatedAt time.Time          `json:"updatedAt"`
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	UserId    primitive.ObjectID `bson:"userId,omitempty"`
+	CreatedAt time.Time          `bson:"createdAt,omitempty"`
+	UpdatedAt time.Time          `bson:"updatedAt,omitempty"`
 }

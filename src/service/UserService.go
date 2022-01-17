@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,7 +20,7 @@ type UserService interface {
 	FindUser(email string) (*database.User, error)
 	FindById(id string) (*database.User, error)
 	UserExists(email string) (bool, error)
-
+	ActivateUser(email string, code string) (*database.User, error)
 	CreateRefreshToken(userId primitive.ObjectID) (string, error)
 	FindUserIdbyRefreshToken(tokenId string) (primitive.ObjectID, error)
 	RemoveRefreshToken(tokenId string) error
@@ -35,6 +36,7 @@ func StaticUserService(client *mongo.Client, configs *provider.Configs) UserServ
 		refreshTokenCollection: database.OpenCollection(client, "refreshToken", configs.DatabaseName),
 	}
 }
+
 func (service *userService) CreateUser(dto dto.RegisterCredentials) (*database.User, error) {
 	//this is used to determine how long the API call should last
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
@@ -48,20 +50,17 @@ func (service *userService) CreateUser(dto dto.RegisterCredentials) (*database.U
 	}
 	password := string(passwordArr[:])
 	user := database.User{
-		ID:        ID,
-		Email:     dto.Email,
-		Password:  &password,
-		FirstName: dto.FirstName,
-		LastName:  dto.LastName,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:             ID,
+		Email:          dto.Email,
+		Password:       &password,
+		FirstName:      dto.FirstName,
+		LastName:       dto.LastName,
+		ActivationCode: uuid.NewString(),
+		CreatedAt:      now,
+		UpdatedAt:      now,
 	}
 
-	result, insertErr := service.userCollection.InsertOne(ctx, user)
-	if insertErr != nil {
-		return nil, insertErr
-	}
-	_, err = primitive.ObjectIDFromHex(fmt.Sprintf("%s", result.InsertedID))
+	_, err = service.userCollection.InsertOne(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -98,6 +97,24 @@ func (service *userService) FindUser(email string) (*database.User, error) {
 	var user database.User
 	filter := bson.M{"email": email}
 	err := service.userCollection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &user, nil
+}
+
+func (service *userService) ActivateUser(email string, code string) (*database.User, error) {
+	//this is used to determine how long the API call should last
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	var user database.User
+	filter := bson.M{"email": email, "actovationCode": code}
+	update := bson.M{"$set": bson.M{"activated": true}}
+	err := service.userCollection.FindOneAndUpdate(ctx, filter, update).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -162,7 +179,7 @@ func (service *userService) FindUserIdbyRefreshToken(tokenId string) (primitive.
 		return primitive.NilObjectID, err
 	}
 
-	return refreshToken.ID, nil
+	return refreshToken.UserId, nil
 }
 
 func (service *userService) RemoveRefreshToken(tokenId string) error {
