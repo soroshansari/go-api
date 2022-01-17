@@ -18,7 +18,7 @@ func GetConfigs() *Configs {
 	}
 	env := os.Getenv("ENV")
 	if env == "" {
-		env = "development"
+		env = "local"
 	}
 	return &Configs{
 		Port:         port,

@@ -25,7 +25,7 @@ func main() {
 
 	app := gin.New()
 
-	if configs.Env == "development" {
+	if configs.Env == "local" {
 		fmt.Println(configs.Env)
 		config := cors.DefaultConfig()
 		// config.AllowOrigins = []string{"http://google.com"}
