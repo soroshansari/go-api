@@ -40,7 +40,7 @@ func AuthHandler(
 	}
 }
 
-// GET /api/auth/login
+// POST /api/auth/login
 // Log in the user
 func (controller *authController) Login(ctx *gin.Context) {
 	var dto dto.LoginCredentials
@@ -76,7 +76,7 @@ func (controller *authController) Login(ctx *gin.Context) {
 	})
 }
 
-// GET /api/auth/register
+// POST /api/auth/register
 // Register a user
 func (controller *authController) Register(ctx *gin.Context) {
 	var dto dto.RegisterCredentials

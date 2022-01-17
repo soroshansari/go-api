@@ -71,12 +71,9 @@ func (service *userService) FindById(id string) (*database.User, error) {
 		return nil, fmt.Errorf("invalid id")
 	}
 	filter := bson.M{"_id": objectId}
-	fmt.Print("filter:")
-	fmt.Println(filter)
 	err = service.collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			fmt.Println("not found")
 			return nil, nil
 		}
 		return nil, err

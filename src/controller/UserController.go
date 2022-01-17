@@ -33,6 +33,8 @@ func UserHandler(
 	}
 }
 
+// GET /api/user/me
+// get authenticated user info
 func (controller *userController) Me(ctx *gin.Context) {
 	userId := ctx.MustGet("userId").(string)
 	fmt.Print("userId:")
