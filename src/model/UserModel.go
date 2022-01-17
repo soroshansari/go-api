@@ -1,7 +1,7 @@
 package model
 
 import (
-	"RentBuddi/src/database"
+	"GoApp/src/database"
 	"fmt"
 	"time"
 )

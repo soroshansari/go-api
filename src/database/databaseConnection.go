@@ -1,7 +1,7 @@
 package database
 
 import (
-	"RentBuddi/src/provider"
+	"GoApp/src/provider"
 	"context"
 	"fmt"
 	"log"

@@ -1,10 +1,10 @@
 package controller
 
 import (
-	dto "RentBuddi/src/dto/auth"
-	"RentBuddi/src/model"
-	"RentBuddi/src/provider"
-	"RentBuddi/src/service"
+	dto "GoApp/src/dto/auth"
+	"GoApp/src/model"
+	"GoApp/src/provider"
+	"GoApp/src/service"
 	"net/http"
 	"time"
 

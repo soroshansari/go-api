@@ -1,9 +1,9 @@
 package service
 
 import (
-	"RentBuddi/src/database"
-	dto "RentBuddi/src/dto/auth"
-	"RentBuddi/src/provider"
+	"GoApp/src/database"
+	dto "GoApp/src/dto/auth"
+	"GoApp/src/provider"
 	"context"
 	"fmt"
 	"time"

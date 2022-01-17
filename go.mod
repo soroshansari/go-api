@@ -1,4 +1,4 @@
-module RentBuddi
+module GoApp
 
 go 1.17
 

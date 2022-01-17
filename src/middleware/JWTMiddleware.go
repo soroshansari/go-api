@@ -1,7 +1,7 @@
 package middleware
 
 import (
-	"RentBuddi/src/provider"
+	"GoApp/src/provider"
 	"fmt"
 	"net/http"
 	"strings"

@@ -6,11 +6,11 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
-	"RentBuddi/src/controller"
-	"RentBuddi/src/database"
-	"RentBuddi/src/middleware"
-	"RentBuddi/src/provider"
-	"RentBuddi/src/service"
+	"GoApp/src/controller"
+	"GoApp/src/database"
+	"GoApp/src/middleware"
+	"GoApp/src/provider"
+	"GoApp/src/service"
 )
 
 func main() {

@@ -1,9 +1,9 @@
 package controller
 
 import (
-	"RentBuddi/src/model"
-	"RentBuddi/src/provider"
-	"RentBuddi/src/service"
+	"GoApp/src/model"
+	"GoApp/src/provider"
+	"GoApp/src/service"
 	"fmt"
 	"net/http"
 
