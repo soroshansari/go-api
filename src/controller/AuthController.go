@@ -22,6 +22,9 @@ type AuthController interface {
 	Login(ctx *gin.Context)
 	Logout(ctx *gin.Context)
 	RefreshToken(ctx *gin.Context)
+	ForgotPass(ctx *gin.Context)
+	ResendActivationEmail(ctx *gin.Context)
+	ResetPass(ctx *gin.Context)
 }
 
 type authController struct {
@@ -97,7 +100,6 @@ func (controller *authController) Login(ctx *gin.Context) {
 }
 
 // POST /api/auth/verify
-// Log in the user
 func (controller *authController) VerifyEmail(ctx *gin.Context) {
 	var dto dto.VerifyEmail
 
@@ -111,7 +113,7 @@ func (controller *authController) VerifyEmail(ctx *gin.Context) {
 		return
 	}
 
-	user, err := controller.userService.ActivateUser(*dto.Email, *dto.Code)
+	user, err := controller.userService.ActivateUser(*dto.Email, *dto.Code, "")
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
@@ -208,6 +210,105 @@ func (controller *authController) Logout(ctx *gin.Context) {
 	err := controller.userService.RemoveRefreshToken(tokenId)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "Success",
+	})
+}
+
+// POST /api/auth/forgot-pass
+func (controller *authController) ForgotPass(ctx *gin.Context) {
+	var dto dto.ForgotPass
+
+	if err := ctx.ShouldBind(&dto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if validationErr := controller.validate.Struct(dto); validationErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		return
+	}
+
+	user, err := controller.userService.UpdateActivationCode(*dto.Email)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	if user == nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": errors.UserNotFound})
+		return
+	}
+
+	err = controller.emailService.SendResetPassEmail(*user.Email, *user.FirstName, user.ActivationCode)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "Success",
+	})
+}
+
+// POST /api/auth/resend-activation-email
+func (controller *authController) ResendActivationEmail(ctx *gin.Context) {
+	var dto dto.ResendActivationEmail
+
+	if err := ctx.ShouldBind(&dto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if validationErr := controller.validate.Struct(dto); validationErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		return
+	}
+
+	user, err := controller.userService.FindUser(*dto.Email)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	if user == nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": errors.UserNotFound})
+		return
+	}
+
+	err = controller.emailService.SendActivationEmail(*user.Email, *user.FirstName, user.ActivationCode)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"status": "Success",
+	})
+}
+
+// POST /api/auth/reset-password
+func (controller *authController) ResetPass(ctx *gin.Context) {
+	var dto dto.ResetPassword
+
+	if err := ctx.ShouldBind(&dto); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if validationErr := controller.validate.Struct(dto); validationErr != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		return
+	}
+
+	user, err := controller.userService.ActivateUser(*dto.Email, *dto.Code, *dto.Password)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	if user == nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": errors.TokenExpired})
 		return
 	}
 

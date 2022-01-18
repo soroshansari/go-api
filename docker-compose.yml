@@ -58,6 +58,7 @@ services:
       - SMTP_PORT=${SMTP_PORT:?err}
       - SMTP_PASSWORD=${SMTP_PASSWORD:?err}
       - FE_VERIFY_URL=${FE_VERIFY_URL:?err}
+      - FE_RESET_PASS_URL=${FE_RESET_PASS_URL:?err}
     volumes:
       - .:/app/
     depends_on:

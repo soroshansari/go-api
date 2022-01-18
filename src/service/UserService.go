@@ -20,10 +20,11 @@ type UserService interface {
 	FindUser(email string) (*database.User, error)
 	FindById(id string) (*database.User, error)
 	UserExists(email string) (bool, error)
-	ActivateUser(email string, code string) (*database.User, error)
+	ActivateUser(email, code, password string) (*database.User, error)
 	CreateRefreshToken(userId primitive.ObjectID) (string, error)
 	FindUserIdbyRefreshToken(tokenId string) (primitive.ObjectID, error)
 	RemoveRefreshToken(tokenId string) error
+	UpdateActivationCode(email string) (*database.User, error)
 }
 type userService struct {
 	userCollection         *mongo.Collection
@@ -106,14 +107,22 @@ func (service *userService) FindUser(email string) (*database.User, error) {
 	return &user, nil
 }
 
-func (service *userService) ActivateUser(email string, code string) (*database.User, error) {
+func (service *userService) ActivateUser(email, code, password string) (*database.User, error) {
 	//this is used to determine how long the API call should last
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
 	var user database.User
 	filter := bson.M{"email": email, "actovationCode": code}
-	update := bson.M{"$set": bson.M{"activated": true}}
+	updateSetter := bson.M{"activated": true}
+	if password != "" {
+		passwordArr, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+		if err != nil {
+			return nil, err
+		}
+		updateSetter["password"] = string(passwordArr[:])
+	}
+	update := bson.M{"$set": updateSetter}
 	err := service.userCollection.FindOneAndUpdate(ctx, filter, update).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -121,6 +130,27 @@ func (service *userService) ActivateUser(email string, code string) (*database.U
 		}
 		return nil, err
 	}
+	return &user, nil
+}
+
+func (service *userService) UpdateActivationCode(email string) (*database.User, error) {
+	//this is used to determine how long the API call should last
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	actovationCode := uuid.NewString()
+
+	var user database.User
+	filter := bson.M{"email": email}
+	update := bson.M{"$set": bson.M{"actovationCode": actovationCode}}
+	err := service.userCollection.FindOneAndUpdate(ctx, filter, update).Decode(&user)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			return nil, nil
+		}
+		return nil, err
+	}
+	user.ActivationCode = actovationCode
 	return &user, nil
 }
 

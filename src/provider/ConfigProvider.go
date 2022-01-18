@@ -14,6 +14,7 @@ type Configs struct {
 	SmtpPort        string
 	SmtpPassword    string
 	VerifyUrl       string
+	ResetPassUrl    string
 	RecaptchaSecret string
 }
 
@@ -37,6 +38,7 @@ func GetConfigs() *Configs {
 		SmtpPort:        os.Getenv("SMTP_PORT"),
 		SmtpPassword:    os.Getenv("SMTP_PASSWORD"),
 		VerifyUrl:       os.Getenv("FE_VERIFY_URL"),
+		ResetPassUrl:    os.Getenv("FE_RESET_PASS_URL"),
 		RecaptchaSecret: os.Getenv("RECAPTCHA_SECRET"),
 	}
 }

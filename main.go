@@ -54,6 +54,9 @@ func main() {
 		auth.POST("login", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "login"), authController.Login)
 		auth.POST("register", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "register"), authController.Register)
 		auth.POST("verify", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "verify"), authController.VerifyEmail)
+		auth.POST("forgot-password", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "forgot-password"), authController.ForgotPass)
+		auth.POST("resend-activation-email", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "resend-activation-email"), authController.ResendActivationEmail)
+		auth.POST("reset-password", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "reset-password"), authController.ResetPass)
 		auth.PUT("refresh/:tokenId", authController.RefreshToken)
 		auth.PUT("logout/:tokenId", authController.Logout)
 	}
