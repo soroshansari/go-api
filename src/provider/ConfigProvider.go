@@ -17,6 +17,7 @@ type Configs struct {
 	ResetPassUrl    string
 	RecaptchaSecret string
 	AllowOrigin     string
+	Domain          string
 }
 
 func GetConfigs() *Configs {
@@ -42,5 +43,6 @@ func GetConfigs() *Configs {
 		ResetPassUrl:    os.Getenv("FE_RESET_PASS_URL"),
 		RecaptchaSecret: os.Getenv("RECAPTCHA_SECRET"),
 		AllowOrigin:     os.Getenv("ALLOWED_ORIGIN"),
+		Domain:          os.Getenv("DOMAIN"),
 	}
 }

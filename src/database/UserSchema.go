@@ -14,6 +14,7 @@ type User struct {
 	LastName       *string            `bson:"lastName,omitempty"`
 	ActivationCode string             `bson:"actovationCode,omitempty"`
 	Activated      bool               `bson:"activated,omitempty"`
+	Profile        string             `bson:"profile,omitempty"`
 	CreatedAt      time.Time          `bson:"createdAt,omitempty"`
 	UpdatedAt      time.Time          `bson:"updatedAt,omitempty"`
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 
 	"GoApp/src/controller"
@@ -45,7 +46,7 @@ func main() {
 	// Recovery middleware recovers from any panics and writes a 500 if there was one.
 	app.Use(gin.Recovery())
 
-	// app.Use(static.Serve("/", static.LocalFile("/client", false)))
+	app.Use(static.Serve("/public", static.LocalFile("public", false)))
 
 	auth := app.Group("/api/auth")
 	{
@@ -63,6 +64,7 @@ func main() {
 	{
 		user.GET("detail", userController.Me)
 		user.POST("change-password", userController.ChangePassword)
+		user.POST("profile", userController.UploadProfile)
 	}
 
 	app.Run()

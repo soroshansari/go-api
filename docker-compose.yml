@@ -41,7 +41,7 @@ services:
       retries: 3
     restart: unless-stopped
 
-  rentbudi-api:
+  go-api:
     image: cosmtrek/air
     # working_dir value has to be the same of mapped volume
     working_dir: /app
@@ -59,7 +59,8 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:?err}
       - FE_VERIFY_URL=${FE_VERIFY_URL:?err}
       - FE_RESET_PASS_URL=${FE_RESET_PASS_URL:?err}
-      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:?err}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN}
+      - DOMAIN=${DOMAIN:?err}
     volumes:
       - .:/app/
     depends_on:

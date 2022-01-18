@@ -98,7 +98,7 @@ func (controller *authController) Login(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"accessToken":  token,
 		"refreshToken": refreshToken,
-		"user":         model.GetUser(user),
+		"user":         model.GetUser(user, &controller.configs),
 	})
 }
 
@@ -126,18 +126,8 @@ func (controller *authController) VerifyEmail(ctx *gin.Context) {
 		return
 	}
 
-	token := controller.jWtService.GenerateToken(user.ID.Hex(), true, time.Minute*15)
-
-	refreshToken, err := controller.refreshTokenService.CreateRefreshToken(user.ID)
-	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
-		return
-	}
-
 	ctx.JSON(http.StatusOK, gin.H{
-		"accessToken":  token,
-		"refreshToken": refreshToken,
-		"user":         model.GetUser(user),
+		"status": "Success",
 	})
 }
 
@@ -277,6 +267,11 @@ func (controller *authController) ResendActivationEmail(ctx *gin.Context) {
 	}
 	if user == nil {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": errors.UserNotFound})
+		return
+	}
+
+	if user.Activated {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": errors.UserAlreadyActivated})
 		return
 	}
 

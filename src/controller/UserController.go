@@ -6,10 +6,15 @@ import (
 	"GoApp/src/model"
 	"GoApp/src/provider"
 	"GoApp/src/service"
+	"io"
+	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -17,6 +22,7 @@ import (
 type UserController interface {
 	Me(ctx *gin.Context)
 	ChangePassword(ctx *gin.Context)
+	UploadProfile(ctx *gin.Context)
 }
 
 type userController struct {
@@ -51,7 +57,7 @@ func (controller *userController) Me(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.GetUser(user))
+	ctx.JSON(http.StatusOK, model.GetUser(user, &controller.configs))
 }
 
 // POST /api/user/change-password
@@ -83,7 +89,7 @@ func (controller *userController) ChangePassword(ctx *gin.Context) {
 		return
 	}
 
-	err = controller.userService.UpdatePassword(userId, *dto.NewPassword)
+	err = controller.userService.UpdatePassword(user.ID, *dto.NewPassword)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
@@ -92,4 +98,53 @@ func (controller *userController) ChangePassword(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{
 		"status": "Success",
 	})
+}
+
+func (controller *userController) UploadProfile(ctx *gin.Context) {
+	userId := ctx.MustGet("userId").(string)
+
+	user, err := controller.userService.FindById(userId)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	if user == nil {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	file, header, err := ctx.Request.FormFile("file")
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	fileExtension := filepath.Ext(header.Filename)
+	filename := uuid.NewString() + fileExtension
+	out, err := os.Create("public/profile/" + filename)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer out.Close()
+	_, err = io.Copy(out, file)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if user.Profile != "" {
+		err = os.Remove("public/profile/" + user.Profile)
+		if err != nil {
+			log.Default().Println(err.Error())
+		}
+	}
+
+	err = controller.userService.UpdateProfile(user.ID, filename)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	filepath := controller.configs.Domain + "/public/profile/" + filename
+	ctx.JSON(http.StatusOK, gin.H{"filepath": filepath})
 }

@@ -5,6 +5,7 @@ import (
 	dto "GoApp/src/dto/auth"
 	"GoApp/src/provider"
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -22,7 +23,8 @@ type UserService interface {
 	UserExists(email string) (bool, error)
 	ActivateUser(email, code, password string) (*database.User, error)
 	UpdateActivationCode(email string) (*database.User, error)
-	UpdatePassword(id, password string) error
+	UpdatePassword(id primitive.ObjectID, password string) error
+	UpdateProfile(id primitive.ObjectID, profile string) error
 }
 type userService struct {
 	collection *mongo.Collection
@@ -129,16 +131,12 @@ func (service *userService) ActivateUser(email, code, password string) (*databas
 	return &user, nil
 }
 
-func (service *userService) UpdatePassword(id, password string) error {
+func (service *userService) UpdatePassword(id primitive.ObjectID, password string) error {
 	//this is used to determine how long the API call should last
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
-	objectId, err := primitive.ObjectIDFromHex(id)
-	if err != nil {
-		return fmt.Errorf("invalid id")
-	}
-	filter := bson.M{"_id": objectId}
+	filter := bson.M{"_id": id}
 
 	passwordArr, err := bcrypt.GenerateFromPassword([]byte(password), 10)
 	if err != nil {
@@ -150,7 +148,25 @@ func (service *userService) UpdatePassword(id, password string) error {
 		return err
 	}
 	if res.MatchedCount != 1 {
-		return fmt.Errorf("User Not Found")
+		return errors.New("user not found")
+	}
+	return nil
+}
+
+func (service *userService) UpdateProfile(id primitive.ObjectID, profile string) error {
+	//this is used to determine how long the API call should last
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": id}
+
+	update := bson.M{"$set": bson.M{"profile": profile}}
+	res, err := service.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount != 1 {
+		return errors.New("user not found")
 	}
 	return nil
 }

@@ -25,11 +25,11 @@ type emailServices struct {
 }
 
 func StaticEmailService(configs *Configs) EmailService {
-	verifyEmailTemplate, err := template.ParseFiles("/app/templates/VerifyEmail.html")
+	verifyEmailTemplate, err := template.ParseFiles("templates/VerifyEmail.html")
 	if err != nil {
 		panic(err)
 	}
-	resetPassEmailTemplate, err := template.ParseFiles("/app/templates/ResetPass.html")
+	resetPassEmailTemplate, err := template.ParseFiles("templates/ResetPass.html")
 	if err != nil {
 		panic(err)
 	}
