@@ -78,7 +78,7 @@ func RecaptchaMiddleware(secret, action string) gin.HandlerFunc {
 			}
 
 			if err := checkRecaptcha(secret, dto.RecaptchaResponse, action); err != nil {
-				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err})
+				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 				return
 			}
 		}

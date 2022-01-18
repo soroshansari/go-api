@@ -22,6 +22,7 @@ type UserService interface {
 	UserExists(email string) (bool, error)
 	ActivateUser(email, code, password string) (*database.User, error)
 	UpdateActivationCode(email string) (*database.User, error)
+	UpdatePassword(id, password string) error
 }
 type userService struct {
 	collection *mongo.Collection
@@ -126,6 +127,32 @@ func (service *userService) ActivateUser(email, code, password string) (*databas
 		return nil, err
 	}
 	return &user, nil
+}
+
+func (service *userService) UpdatePassword(id, password string) error {
+	//this is used to determine how long the API call should last
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	objectId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return fmt.Errorf("invalid id")
+	}
+	filter := bson.M{"_id": objectId}
+
+	passwordArr, err := bcrypt.GenerateFromPassword([]byte(password), 10)
+	if err != nil {
+		return err
+	}
+	update := bson.M{"$set": bson.M{"password": string(passwordArr[:])}}
+	res, err := service.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount != 1 {
+		return fmt.Errorf("User Not Found")
+	}
+	return nil
 }
 
 func (service *userService) UpdateActivationCode(email string) (*database.User, error) {

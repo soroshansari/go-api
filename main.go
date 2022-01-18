@@ -61,7 +61,8 @@ func main() {
 	user := app.Group("/api/user")
 	user.Use(middleware.AuthorizeJWT(&configs))
 	{
-		user.GET("/detail", userController.Me)
+		user.GET("detail", userController.Me)
+		user.POST("change-password", userController.ChangePassword)
 	}
 
 	app.Run()

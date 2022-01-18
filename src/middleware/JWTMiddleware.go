@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"GoApp/src/provider"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -23,9 +22,15 @@ func AuthorizeJWT(configs *provider.Configs) gin.HandlerFunc {
 			return
 		}
 		tokenString := authHeader[len(BEARER_SCHEMA):]
+		if tokenString == "" {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
 		token, err := provider.JWTAuthService(configs).ValidateToken(tokenString)
+		if err != nil {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		}
 		if !token.Valid {
-			fmt.Println(err)
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
