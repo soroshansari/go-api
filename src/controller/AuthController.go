@@ -28,25 +28,28 @@ type AuthController interface {
 }
 
 type authController struct {
-	jWtService   provider.JWTService
-	configs      provider.Configs
-	userService  service.UserService
-	emailService provider.EmailService
-	validate     validator.Validate
+	jWtService          provider.JWTService
+	configs             provider.Configs
+	userService         service.UserService
+	refreshTokenService service.RefreshTokenService
+	emailService        provider.EmailService
+	validate            validator.Validate
 }
 
 func AuthHandler(
 	jWtService *provider.JWTService,
 	userService *service.UserService,
+	refreshTokenService *service.RefreshTokenService,
 	emailService *provider.EmailService,
 	configs *provider.Configs,
 ) AuthController {
 	return &authController{
-		jWtService:   *jWtService,
-		configs:      *configs,
-		userService:  *userService,
-		emailService: *emailService,
-		validate:     *validator.New(),
+		jWtService:          *jWtService,
+		configs:             *configs,
+		userService:         *userService,
+		refreshTokenService: *refreshTokenService,
+		emailService:        *emailService,
+		validate:            *validator.New(),
 	}
 }
 
@@ -86,7 +89,7 @@ func (controller *authController) Login(ctx *gin.Context) {
 
 	token := controller.jWtService.GenerateToken(user.ID.Hex(), true, time.Minute*15)
 
-	refreshToken, err := controller.userService.CreateRefreshToken(user.ID)
+	refreshToken, err := controller.refreshTokenService.CreateRefreshToken(user.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
@@ -125,7 +128,7 @@ func (controller *authController) VerifyEmail(ctx *gin.Context) {
 
 	token := controller.jWtService.GenerateToken(user.ID.Hex(), true, time.Minute*15)
 
-	refreshToken, err := controller.userService.CreateRefreshToken(user.ID)
+	refreshToken, err := controller.refreshTokenService.CreateRefreshToken(user.ID)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
 		return
@@ -185,7 +188,7 @@ func (controller *authController) Register(ctx *gin.Context) {
 func (controller *authController) RefreshToken(ctx *gin.Context) {
 	tokenId := ctx.Param("tokenId")
 
-	userId, err := controller.userService.FindUserIdbyRefreshToken(tokenId)
+	userId, err := controller.refreshTokenService.FindUserIdbyRefreshToken(tokenId)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": errors.TokenNotFound})
@@ -207,7 +210,7 @@ func (controller *authController) RefreshToken(ctx *gin.Context) {
 func (controller *authController) Logout(ctx *gin.Context) {
 	tokenId := ctx.Param("tokenId")
 
-	err := controller.userService.RemoveRefreshToken(tokenId)
+	err := controller.refreshTokenService.RemoveRefreshToken(tokenId)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

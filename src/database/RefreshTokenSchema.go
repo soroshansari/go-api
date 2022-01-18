@@ -9,6 +9,7 @@ import (
 type RefreshToken struct {
 	ID        primitive.ObjectID `bson:"_id,omitempty"`
 	UserId    primitive.ObjectID `bson:"userId,omitempty"`
+	TokenId   string             `bson:"tokenId,omitempty"`
 	CreatedAt time.Time          `bson:"createdAt,omitempty"`
 	UpdatedAt time.Time          `bson:"updatedAt,omitempty"`
 }

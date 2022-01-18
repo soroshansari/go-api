@@ -16,6 +16,7 @@ type Configs struct {
 	VerifyUrl       string
 	ResetPassUrl    string
 	RecaptchaSecret string
+	AllowOrigin     string
 }
 
 func GetConfigs() *Configs {
@@ -40,5 +41,6 @@ func GetConfigs() *Configs {
 		VerifyUrl:       os.Getenv("FE_VERIFY_URL"),
 		ResetPassUrl:    os.Getenv("FE_RESET_PASS_URL"),
 		RecaptchaSecret: os.Getenv("RECAPTCHA_SECRET"),
+		AllowOrigin:     os.Getenv("ALLOWED_ORIGIN"),
 	}
 }

@@ -21,20 +21,15 @@ type UserService interface {
 	FindById(id string) (*database.User, error)
 	UserExists(email string) (bool, error)
 	ActivateUser(email, code, password string) (*database.User, error)
-	CreateRefreshToken(userId primitive.ObjectID) (string, error)
-	FindUserIdbyRefreshToken(tokenId string) (primitive.ObjectID, error)
-	RemoveRefreshToken(tokenId string) error
 	UpdateActivationCode(email string) (*database.User, error)
 }
 type userService struct {
-	userCollection         *mongo.Collection
-	refreshTokenCollection *mongo.Collection
+	collection *mongo.Collection
 }
 
 func StaticUserService(client *mongo.Client, configs *provider.Configs) UserService {
 	return &userService{
-		userCollection:         database.OpenCollection(client, "user", configs.DatabaseName),
-		refreshTokenCollection: database.OpenCollection(client, "refreshToken", configs.DatabaseName),
+		collection: database.OpenCollection(client, "user", configs.DatabaseName),
 	}
 }
 
@@ -61,7 +56,7 @@ func (service *userService) CreateUser(dto dto.RegisterCredentials) (*database.U
 		UpdatedAt:      now,
 	}
 
-	_, err = service.userCollection.InsertOne(ctx, user)
+	_, err = service.collection.InsertOne(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +75,7 @@ func (service *userService) FindById(id string) (*database.User, error) {
 		return nil, fmt.Errorf("invalid id")
 	}
 	filter := bson.M{"_id": objectId}
-	err = service.userCollection.FindOne(ctx, filter).Decode(&user)
+	err = service.collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -97,7 +92,7 @@ func (service *userService) FindUser(email string) (*database.User, error) {
 
 	var user database.User
 	filter := bson.M{"email": email}
-	err := service.userCollection.FindOne(ctx, filter).Decode(&user)
+	err := service.collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -123,7 +118,7 @@ func (service *userService) ActivateUser(email, code, password string) (*databas
 		updateSetter["password"] = string(passwordArr[:])
 	}
 	update := bson.M{"$set": updateSetter}
-	err := service.userCollection.FindOneAndUpdate(ctx, filter, update).Decode(&user)
+	err := service.collection.FindOneAndUpdate(ctx, filter, update).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -143,7 +138,7 @@ func (service *userService) UpdateActivationCode(email string) (*database.User, 
 	var user database.User
 	filter := bson.M{"email": email}
 	update := bson.M{"$set": bson.M{"actovationCode": actovationCode}}
-	err := service.userCollection.FindOneAndUpdate(ctx, filter, update).Decode(&user)
+	err := service.collection.FindOneAndUpdate(ctx, filter, update).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return nil, nil
@@ -160,7 +155,7 @@ func (service *userService) UserExists(email string) (bool, error) {
 	defer cancel()
 
 	filter := bson.M{"email": email}
-	count, err := service.userCollection.CountDocuments(ctx, filter)
+	count, err := service.collection.CountDocuments(ctx, filter)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			return false, nil
@@ -168,61 +163,4 @@ func (service *userService) UserExists(email string) (bool, error) {
 		return false, err
 	}
 	return count > 0, nil
-}
-
-func (service *userService) CreateRefreshToken(userId primitive.ObjectID) (string, error) {
-	//this is used to determine how long the API call should last
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	defer cancel()
-
-	ID := primitive.NewObjectID()
-	now, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	refreshToken := database.RefreshToken{
-		ID:        ID,
-		UserId:    userId,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}
-
-	_, err := service.refreshTokenCollection.InsertOne(ctx, refreshToken)
-	if err != nil {
-		return "", err
-	}
-
-	return ID.Hex(), nil
-}
-
-func (service *userService) FindUserIdbyRefreshToken(tokenId string) (primitive.ObjectID, error) {
-	//this is used to determine how long the API call should last
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	defer cancel()
-
-	objectId, err := primitive.ObjectIDFromHex(tokenId)
-	if err != nil {
-		return primitive.NilObjectID, fmt.Errorf("invalid refreshToken")
-	}
-
-	var refreshToken database.RefreshToken
-	filter := bson.M{"_id": objectId}
-	err = service.refreshTokenCollection.FindOne(ctx, filter).Decode(&refreshToken)
-	if err != nil {
-		return primitive.NilObjectID, err
-	}
-
-	return refreshToken.UserId, nil
-}
-
-func (service *userService) RemoveRefreshToken(tokenId string) error {
-	//this is used to determine how long the API call should last
-	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
-	defer cancel()
-
-	objectId, err := primitive.ObjectIDFromHex(tokenId)
-	if err != nil {
-		return fmt.Errorf("invalid refreshToken")
-	}
-
-	filter := bson.M{"_id": objectId}
-	_, err = service.refreshTokenCollection.DeleteOne(ctx, filter)
-	return err
 }

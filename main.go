@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 
@@ -19,25 +17,25 @@ func main() {
 
 	var dbClient = database.GetClient(configs)
 	var userService service.UserService = service.StaticUserService(dbClient, &configs)
+	var refreshTokenService service.RefreshTokenService = service.StaticRefreshTokenService(dbClient, &configs)
 	var emailService provider.EmailService = provider.StaticEmailService(&configs)
 	var jwtService provider.JWTService = provider.JWTAuthService(&configs)
-	var authController controller.AuthController = controller.AuthHandler(&jwtService, &userService, &emailService, &configs)
+	var authController controller.AuthController = controller.AuthHandler(&jwtService, &userService, &refreshTokenService, &emailService, &configs)
 	var userController controller.UserController = controller.UserHandler(&userService, &configs)
 
 	app := gin.New()
 
-	if configs.Env == "local" {
-		fmt.Println(configs.Env)
-		config := cors.DefaultConfig()
-		// config.AllowOrigins = []string{"http://google.com"}
-		// config.AllowOrigins == []string{"http://google.com", "http://facebook.com"}
+	config := cors.DefaultConfig()
+	if configs.AllowOrigin != "" {
+		config.AllowOrigins = []string{configs.AllowOrigin}
+	} else {
 		config.AllowAllOrigins = true
-		config.AllowMethods = []string{"*"}
-		config.AllowHeaders = []string{"*"}
-		config.AllowCredentials = true
-
-		app.Use(cors.New(config))
 	}
+	config.AllowMethods = []string{"*"}
+	config.AllowHeaders = []string{"*"}
+	config.AllowCredentials = true
+
+	app.Use(cors.New(config))
 
 	// Global middleware
 	// Logger middleware will write the logs to gin.DefaultWriter even if you set with GIN_MODE=release.
