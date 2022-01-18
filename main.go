@@ -49,21 +49,11 @@ func main() {
 
 	// app.Use(static.Serve("/", static.LocalFile("/client", false)))
 
-	// books := app.Group("/api/books")
-	// books.Use(middleware.AuthorizeJWT())
-	// {
-	// 	books.GET("/", controller.FindBooks)
-	// 	books.POST("/", controller.CreateBook)
-	// 	books.GET("/:id", controller.FindBook)
-	// 	books.PATCH("/:id", controller.UpdateBook)
-	// 	books.DELETE("/:id", controller.DeleteBook)
-	// }
-
 	auth := app.Group("/api/auth")
 	{
-		auth.POST("login", authController.Login)
-		auth.POST("register", authController.Register)
-		auth.POST("verify", authController.VerifyEmail)
+		auth.POST("login", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "login"), authController.Login)
+		auth.POST("register", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "register"), authController.Register)
+		auth.POST("verify", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "verify"), authController.VerifyEmail)
 		auth.PUT("refresh/:tokenId", authController.RefreshToken)
 		auth.PUT("logout/:tokenId", authController.Logout)
 	}
