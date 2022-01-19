@@ -1,8 +1,8 @@
-package provider
+package providers
 
 import "os"
 
-type Configs struct {
+type Config struct {
 	Port            string
 	Env             string
 	JwtSecret       string
@@ -18,9 +18,10 @@ type Configs struct {
 	RecaptchaSecret string
 	AllowOrigin     string
 	Domain          string
+	AuthKey         string
 }
 
-func GetConfigs() *Configs {
+func GetConfig() *Config {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
@@ -29,7 +30,7 @@ func GetConfigs() *Configs {
 	if env == "" {
 		env = "local"
 	}
-	return &Configs{
+	return &Config{
 		Port:            port,
 		Env:             env,
 		JwtSecret:       os.Getenv("JWT_SECRET"),
@@ -44,5 +45,6 @@ func GetConfigs() *Configs {
 		RecaptchaSecret: os.Getenv("RECAPTCHA_SECRET"),
 		AllowOrigin:     os.Getenv("ALLOWED_ORIGIN"),
 		Domain:          os.Getenv("DOMAIN"),
+		AuthKey:         os.Getenv("AUTH_KEY"),
 	}
 }

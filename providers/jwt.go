@@ -1,4 +1,4 @@
-package provider
+package providers
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ type jwtServices struct {
 }
 
 //auth-jwt
-func JWTAuthService(configs *Configs) JWTService {
+func NewJWTService(configs *Config) JWTService {
 	return &jwtServices{
 		secretKey: configs.JwtSecret,
 		issure:    configs.AppName,

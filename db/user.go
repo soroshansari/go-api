@@ -1,9 +1,8 @@
-package service
+package db
 
 import (
-	"GoApp/src/database"
-	dto "GoApp/src/dto/auth"
-	"GoApp/src/provider"
+	dto "GoApp/dto/auth"
+	"GoApp/providers"
 	"context"
 	"errors"
 	"fmt"
@@ -16,13 +15,26 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+type User struct {
+	ID             primitive.ObjectID `bson:"_id,omitempty"`
+	Email          *string            `bson:"email,omitempty"`
+	Password       *string            `bson:"password,omitempty"`
+	FirstName      *string            `bson:"firstName,omitempty"`
+	LastName       *string            `bson:"lastName,omitempty"`
+	ActivationCode string             `bson:"actovationCode,omitempty"`
+	Activated      bool               `bson:"activated,omitempty"`
+	Profile        string             `bson:"profile,omitempty"`
+	CreatedAt      time.Time          `bson:"createdAt,omitempty"`
+	UpdatedAt      time.Time          `bson:"updatedAt,omitempty"`
+}
+
 type UserService interface {
-	CreateUser(user dto.RegisterCredentials) (*database.User, error)
-	FindUser(email string) (*database.User, error)
-	FindById(id string) (*database.User, error)
+	CreateUser(user dto.RegisterCredentials) (*User, error)
+	FindUser(email string) (*User, error)
+	FindById(id string) (*User, error)
 	UserExists(email string) (bool, error)
-	ActivateUser(email, code, password string) (*database.User, error)
-	UpdateActivationCode(email string) (*database.User, error)
+	ActivateUser(email, code, password string) (*User, error)
+	UpdateActivationCode(email string) (*User, error)
 	UpdatePassword(id primitive.ObjectID, password string) error
 	UpdateProfile(id primitive.ObjectID, profile string) error
 }
@@ -30,13 +42,13 @@ type userService struct {
 	collection *mongo.Collection
 }
 
-func StaticUserService(client *mongo.Client, configs *provider.Configs) UserService {
+func NewUserService(client *mongo.Client, configs *providers.Config) UserService {
 	return &userService{
-		collection: database.OpenCollection(client, "user", configs.DatabaseName),
+		collection: OpenCollection(client, "user", configs.DatabaseName),
 	}
 }
 
-func (service *userService) CreateUser(dto dto.RegisterCredentials) (*database.User, error) {
+func (service *userService) CreateUser(dto dto.RegisterCredentials) (*User, error) {
 	//this is used to determine how long the API call should last
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
@@ -48,7 +60,7 @@ func (service *userService) CreateUser(dto dto.RegisterCredentials) (*database.U
 		return nil, err
 	}
 	password := string(passwordArr[:])
-	user := database.User{
+	user := User{
 		ID:             ID,
 		Email:          dto.Email,
 		Password:       &password,
@@ -66,12 +78,12 @@ func (service *userService) CreateUser(dto dto.RegisterCredentials) (*database.U
 	return &user, nil
 }
 
-func (service *userService) FindById(id string) (*database.User, error) {
+func (service *userService) FindById(id string) (*User, error) {
 	//this is used to determine how long the API call should last
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
-	var user database.User
+	var user User
 
 	objectId, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
@@ -88,12 +100,12 @@ func (service *userService) FindById(id string) (*database.User, error) {
 	return &user, nil
 }
 
-func (service *userService) FindUser(email string) (*database.User, error) {
+func (service *userService) FindUser(email string) (*User, error) {
 	//this is used to determine how long the API call should last
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
-	var user database.User
+	var user User
 	filter := bson.M{"email": email}
 	err := service.collection.FindOne(ctx, filter).Decode(&user)
 	if err != nil {
@@ -105,12 +117,12 @@ func (service *userService) FindUser(email string) (*database.User, error) {
 	return &user, nil
 }
 
-func (service *userService) ActivateUser(email, code, password string) (*database.User, error) {
+func (service *userService) ActivateUser(email, code, password string) (*User, error) {
 	//this is used to determine how long the API call should last
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
-	var user database.User
+	var user User
 	filter := bson.M{"email": email, "actovationCode": code}
 	updateSetter := bson.M{"activated": true}
 	if password != "" {
@@ -171,14 +183,14 @@ func (service *userService) UpdateProfile(id primitive.ObjectID, profile string)
 	return nil
 }
 
-func (service *userService) UpdateActivationCode(email string) (*database.User, error) {
+func (service *userService) UpdateActivationCode(email string) (*User, error) {
 	//this is used to determine how long the API call should last
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
 	actovationCode := uuid.NewString()
 
-	var user database.User
+	var user User
 	filter := bson.M{"email": email}
 	update := bson.M{"$set": bson.M{"actovationCode": actovationCode}}
 	err := service.collection.FindOneAndUpdate(ctx, filter, update).Decode(&user)

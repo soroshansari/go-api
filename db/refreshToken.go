@@ -1,8 +1,7 @@
-package service
+package db
 
 import (
-	"GoApp/src/database"
-	"GoApp/src/provider"
+	"GoApp/providers"
 	"context"
 	"fmt"
 	"os"
@@ -15,6 +14,14 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+type RefreshToken struct {
+	ID        primitive.ObjectID `bson:"_id,omitempty"`
+	UserId    primitive.ObjectID `bson:"userId,omitempty"`
+	TokenId   string             `bson:"tokenId,omitempty"`
+	CreatedAt time.Time          `bson:"createdAt,omitempty"`
+	UpdatedAt time.Time          `bson:"updatedAt,omitempty"`
+}
+
 type RefreshTokenService interface {
 	CreateRefreshToken(userId primitive.ObjectID) (string, error)
 	FindUserIdbyRefreshToken(tokenId string) (primitive.ObjectID, error)
@@ -24,11 +31,11 @@ type refreshTokenService struct {
 	collection *mongo.Collection
 }
 
-func StaticRefreshTokenService(client *mongo.Client, configs *provider.Configs) RefreshTokenService {
+func NewRefreshTokenService(client *mongo.Client, configs *providers.Config) RefreshTokenService {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
-	collection := database.OpenCollection(client, "refreshToken", configs.DatabaseName)
+	collection := OpenCollection(client, "refreshToken", configs.DatabaseName)
 	mod := mongo.IndexModel{
 		Keys: bson.M{
 			"tokenId": 1, // index in ascending order
@@ -54,7 +61,7 @@ func (service *refreshTokenService) CreateRefreshToken(userId primitive.ObjectID
 
 	ID := primitive.NewObjectID()
 	now, _ := time.Parse(time.RFC3339, time.Now().Format(time.RFC3339))
-	refreshToken := database.RefreshToken{
+	refreshToken := RefreshToken{
 		ID:        ID,
 		UserId:    userId,
 		TokenId:   uuid.NewString(),
@@ -75,7 +82,7 @@ func (service *refreshTokenService) FindUserIdbyRefreshToken(tokenId string) (pr
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
-	var refreshToken database.RefreshToken
+	var refreshToken RefreshToken
 	filter := bson.M{"tokenId": tokenId}
 	err := service.collection.FindOne(ctx, filter).Decode(&refreshToken)
 	if err != nil {

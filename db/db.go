@@ -1,7 +1,7 @@
-package database
+package db
 
 import (
-	"GoApp/src/provider"
+	"GoApp/providers"
 	"context"
 	"fmt"
 	"log"
@@ -12,7 +12,7 @@ import (
 )
 
 //DBinstance func
-func GetClient(configs provider.Configs) *mongo.Client {
+func GetClient(configs providers.Config) *mongo.Client {
 	client, err := mongo.NewClient(options.Client().ApplyURI(configs.MongoDbUrl))
 	if err != nil {
 		log.Fatal(err)

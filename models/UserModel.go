@@ -1,8 +1,8 @@
-package model
+package models
 
 import (
-	"GoApp/src/database"
-	"GoApp/src/provider"
+	"GoApp/db"
+	"GoApp/providers"
 	"fmt"
 	"time"
 )
@@ -18,7 +18,7 @@ type User struct {
 	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
-func GetUser(user *database.User, configs *provider.Configs) *User {
+func GetUser(user *db.User, config *providers.Config) *User {
 	_user := User{
 		Id:          user.ID.Hex(),
 		Email:       user.Email,
@@ -29,7 +29,7 @@ func GetUser(user *database.User, configs *provider.Configs) *User {
 		UpdatedAt:   user.UpdatedAt,
 	}
 	if user.Profile != "" {
-		_user.Profile = configs.Domain + "/public/profile/" + user.Profile
+		_user.Profile = config.Domain + "/public/profile/" + user.Profile
 	}
 	return &_user
 }

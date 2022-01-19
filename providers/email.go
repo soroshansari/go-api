@@ -1,4 +1,4 @@
-package provider
+package providers
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ type emailServices struct {
 	resetPassUrl           string
 }
 
-func StaticEmailService(configs *Configs) EmailService {
+func NewEmailService(configs *Config) EmailService {
 	verifyEmailTemplate, err := template.ParseFiles("templates/VerifyEmail.html")
 	if err != nil {
 		panic(err)

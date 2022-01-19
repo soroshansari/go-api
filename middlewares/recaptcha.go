@@ -1,7 +1,7 @@
-package middleware
+package middlewares
 
 import (
-	"GoApp/src/lib"
+	"GoApp/lib"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -69,21 +69,21 @@ func checkRecaptcha(secret, response, action string) error {
 }
 
 func RecaptchaMiddleware(secret, action string) gin.HandlerFunc {
-	return func(ctx *gin.Context) {
+	return func(c *gin.Context) {
 		if secret != "" {
 			var dto SiteVerifyRequest
 
-			if err := ctx.ShouldBind(&dto); err != nil {
-				lib.ErrorResponse(ctx, http.StatusUnauthorized, "")
+			if err := c.ShouldBind(&dto); err != nil {
+				lib.ErrorResponse(c, http.StatusUnauthorized, "")
 				return
 			}
 
 			if err := checkRecaptcha(secret, dto.RecaptchaResponse, action); err != nil {
-				ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+				lib.ErrorResponse(c, http.StatusUnauthorized, err.Error())
 				return
 			}
 		}
 
-		ctx.Next()
+		c.Next()
 	}
 }
