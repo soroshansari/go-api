@@ -59,6 +59,7 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:?err}
       - FE_VERIFY_URL=${FE_VERIFY_URL:?err}
       - FE_RESET_PASS_URL=${FE_RESET_PASS_URL:?err}
+      - RECAPTCHA_SECRET=${RECAPTCHA_SECRET}
       - ALLOWED_ORIGIN=${ALLOWED_ORIGIN}
       - DOMAIN=${DOMAIN:?err}
     volumes:
