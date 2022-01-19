@@ -3,6 +3,7 @@ package controller
 import (
 	errors "GoApp/src/constants/errors"
 	dto "GoApp/src/dto/user"
+	"GoApp/src/lib"
 	"GoApp/src/model"
 	"GoApp/src/provider"
 	"GoApp/src/service"
@@ -49,15 +50,15 @@ func (controller *userController) Me(ctx *gin.Context) {
 
 	user, err := controller.userService.FindById(userId)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		lib.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if user == nil {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
+		lib.ErrorResponse(ctx, http.StatusUnauthorized, "")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, model.GetUser(user, &controller.configs))
+	lib.JsonResponse(ctx, model.GetUser(user, &controller.configs))
 }
 
 // POST /api/user/change-password
@@ -66,38 +67,36 @@ func (controller *userController) ChangePassword(ctx *gin.Context) {
 	var dto dto.ChangePassword
 
 	if err := ctx.ShouldBind(&dto); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		lib.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	if validationErr := controller.validate.Struct(dto); validationErr != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": validationErr.Error()})
+		lib.ErrorResponse(ctx, http.StatusBadRequest, validationErr.Error())
 		return
 	}
 
 	user, err := controller.userService.FindById(userId)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		lib.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if user == nil {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
+		lib.ErrorResponse(ctx, http.StatusUnauthorized, "")
 		return
 	}
 	if err := bcrypt.CompareHashAndPassword([]byte(*user.Password), []byte(*dto.OldPassword)); err != nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": errors.IncorrectOldPassword})
+		lib.ErrorResponse(ctx, http.StatusUnprocessableEntity, errors.IncorrectOldPassword)
 		return
 	}
 
 	err = controller.userService.UpdatePassword(user.ID, *dto.NewPassword)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		lib.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"status": "Success",
-	})
+	lib.JsonResponse(ctx, nil)
 }
 
 func (controller *userController) UploadProfile(ctx *gin.Context) {
@@ -105,30 +104,30 @@ func (controller *userController) UploadProfile(ctx *gin.Context) {
 
 	user, err := controller.userService.FindById(userId)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, err)
+		lib.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if user == nil {
-		ctx.AbortWithStatus(http.StatusUnauthorized)
+		lib.ErrorResponse(ctx, http.StatusUnauthorized, "")
 		return
 	}
 
 	file, header, err := ctx.Request.FormFile("file")
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		lib.ErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 	fileExtension := filepath.Ext(header.Filename)
 	filename := uuid.NewString() + fileExtension
 	out, err := os.Create("public/profile/" + filename)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		lib.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 	defer out.Close()
 	_, err = io.Copy(out, file)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		lib.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -141,10 +140,10 @@ func (controller *userController) UploadProfile(ctx *gin.Context) {
 
 	err = controller.userService.UpdateProfile(user.ID, filename)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		lib.ErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	filepath := controller.configs.Domain + "/public/profile/" + filename
-	ctx.JSON(http.StatusOK, gin.H{"filepath": filepath})
+	lib.JsonResponse(ctx, gin.H{"filepath": filepath})
 }

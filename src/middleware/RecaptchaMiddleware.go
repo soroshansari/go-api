@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"GoApp/src/lib"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -73,7 +74,7 @@ func RecaptchaMiddleware(secret, action string) gin.HandlerFunc {
 			var dto SiteVerifyRequest
 
 			if err := ctx.ShouldBind(&dto); err != nil {
-				ctx.AbortWithStatus(http.StatusUnauthorized)
+				lib.ErrorResponse(ctx, http.StatusUnauthorized, "")
 				return
 			}
 

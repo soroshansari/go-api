@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
@@ -21,6 +23,7 @@ func main() {
 	var refreshTokenService service.RefreshTokenService = service.StaticRefreshTokenService(dbClient, &configs)
 	var emailService provider.EmailService = provider.StaticEmailService(&configs)
 	var jwtService provider.JWTService = provider.JWTAuthService(&configs)
+	var mainController controller.MainController = controller.MainControllerHandler()
 	var authController controller.AuthController = controller.AuthHandler(&jwtService, &userService, &refreshTokenService, &emailService, &configs)
 	var userController controller.UserController = controller.UserHandler(&userService, &configs)
 
@@ -48,6 +51,8 @@ func main() {
 
 	app.Use(static.Serve("/public", static.LocalFile("public", false)))
 
+	// Routes
+	app.GET("/", mainController.HealthCheck)
 	auth := app.Group("/api/auth")
 	{
 		auth.POST("login", middleware.RecaptchaMiddleware(configs.RecaptchaSecret, "login"), authController.Login)
@@ -67,5 +72,7 @@ func main() {
 		user.POST("profile", userController.UploadProfile)
 	}
 
-	app.Run()
+	if err := app.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
