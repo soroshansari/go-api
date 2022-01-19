@@ -160,7 +160,7 @@ func (controller *authController) Register(c *gin.Context) {
 		return
 	}
 
-	err = controller.emailService.SendActivationEmail(*user.Email, *user.FirstName, user.ActivationCode)
+	err = controller.emailService.SendActivationEmail(*user.Email, *user.Firstname, user.ActivationCode)
 	if err != nil {
 		lib.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -229,7 +229,7 @@ func (controller *authController) ForgotPass(c *gin.Context) {
 		return
 	}
 
-	err = controller.emailService.SendResetPassEmail(*user.Email, *user.FirstName, user.ActivationCode)
+	err = controller.emailService.SendResetPassEmail(*user.Email, *user.Firstname, user.ActivationCode)
 	if err != nil {
 		lib.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
@@ -267,7 +267,7 @@ func (controller *authController) ResendActivationEmail(c *gin.Context) {
 		return
 	}
 
-	err = controller.emailService.SendActivationEmail(*user.Email, *user.FirstName, user.ActivationCode)
+	err = controller.emailService.SendActivationEmail(*user.Email, *user.Firstname, user.ActivationCode)
 	if err != nil {
 		lib.ErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

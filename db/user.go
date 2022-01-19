@@ -19,8 +19,8 @@ type User struct {
 	ID             primitive.ObjectID `bson:"_id,omitempty"`
 	Email          *string            `bson:"email,omitempty"`
 	Password       *string            `bson:"password,omitempty"`
-	FirstName      *string            `bson:"firstName,omitempty"`
-	LastName       *string            `bson:"lastName,omitempty"`
+	Firstname      *string            `bson:"firstname,omitempty"`
+	Lastname       *string            `bson:"lastname,omitempty"`
 	ActivationCode string             `bson:"actovationCode,omitempty"`
 	Activated      bool               `bson:"activated,omitempty"`
 	Profile        string             `bson:"profile,omitempty"`
@@ -37,6 +37,7 @@ type UserService interface {
 	UpdateActivationCode(email string) (*User, error)
 	UpdatePassword(id primitive.ObjectID, password string) error
 	UpdateProfile(id primitive.ObjectID, profile string) error
+	UpdateDetail(userId, firstname, lastname string) error
 }
 type userService struct {
 	collection *mongo.Collection
@@ -64,8 +65,8 @@ func (service *userService) CreateUser(dto dto.RegisterCredentials) (*User, erro
 		ID:             ID,
 		Email:          dto.Email,
 		Password:       &password,
-		FirstName:      dto.FirstName,
-		LastName:       dto.LastName,
+		Firstname:      dto.Firstname,
+		Lastname:       dto.Lastname,
 		ActivationCode: uuid.NewString(),
 		CreatedAt:      now,
 		UpdatedAt:      now,
@@ -173,6 +174,31 @@ func (service *userService) UpdateProfile(id primitive.ObjectID, profile string)
 	filter := bson.M{"_id": id}
 
 	update := bson.M{"$set": bson.M{"profile": profile}}
+	res, err := service.collection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+	if res.MatchedCount != 1 {
+		return errors.New("user not found")
+	}
+	return nil
+}
+
+func (service *userService) UpdateDetail(userId, firstname, lastname string) error {
+	//this is used to determine how long the API call should last
+	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
+	defer cancel()
+
+	objectId, err := primitive.ObjectIDFromHex(userId)
+	if err != nil {
+		return fmt.Errorf("invalid id")
+	}
+	filter := bson.M{"_id": objectId}
+
+	update := bson.M{"$set": bson.M{
+		"firstname": firstname,
+		"lastname":  lastname,
+	}}
 	res, err := service.collection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err

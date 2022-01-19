@@ -66,9 +66,10 @@ func NewRouter(configs *providers.Config, controllers *Controllers, providers *P
 		user := v1.Group("user")
 		user.Use(middlewares.AuthorizeJWT(providers.jwtService))
 		{
-			user.GET("detail", controllers.userController.Me)
+			user.GET("details", controllers.userController.Me)
 			user.POST("change-password", controllers.userController.ChangePassword)
 			user.POST("profile", controllers.userController.UploadProfile)
+			user.POST("details", controllers.userController.UpdateUserDetails)
 		}
 	}
 	return router

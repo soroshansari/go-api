@@ -23,6 +23,7 @@ type UserController interface {
 	Me(c *gin.Context)
 	ChangePassword(c *gin.Context)
 	UploadProfile(c *gin.Context)
+	UpdateUserDetails(c *gin.Context)
 }
 
 type userController struct {
@@ -42,7 +43,7 @@ func UserHandler(
 	}
 }
 
-// GET /api/user/me
+// GET /api/user/details
 // get authenticated user info
 func (controller *userController) Me(c *gin.Context) {
 	userId := c.MustGet("userId").(string)
@@ -58,6 +59,32 @@ func (controller *userController) Me(c *gin.Context) {
 	}
 
 	lib.JsonResponse(c, models.GetUser(user, &controller.configs))
+}
+
+// POST /api/user/details
+// get authenticated user info
+func (controller *userController) UpdateUserDetails(c *gin.Context) {
+	userId := c.MustGet("userId").(string)
+
+	var dto dto.UpdateUserDetails
+
+	if err := c.ShouldBind(&dto); err != nil {
+		lib.ErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	if validationErr := controller.validate.Struct(dto); validationErr != nil {
+		lib.ErrorResponse(c, http.StatusBadRequest, validationErr.Error())
+		return
+	}
+
+	err := controller.userService.UpdateDetail(userId, *dto.Firstname, *dto.Lastname)
+	if err != nil {
+		lib.ErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	lib.JsonResponse(c, nil)
 }
 
 // POST /api/user/change-password
